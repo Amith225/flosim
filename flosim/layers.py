@@ -32,6 +32,9 @@ class ReservoirLayer(_FL):
     def setMask(self, x, y, mask: bool = True):
         self._level[y, x] = mask
 
+    def setHeight(self, height):
+        self._height = height
+
     def _tick(self,
               WM: "_np.ndarray", *_,
               tick: float, **__) -> tuple["_np.ndarray", "_np.ndarray", "_np.ndarray", "_np.ndarray"]:
