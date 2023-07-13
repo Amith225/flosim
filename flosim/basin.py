@@ -10,7 +10,7 @@ class ControlLayer(metaclass=ABCMeta):
 
     def __init__(self, x, y):
         self._x, self._y = x, y
-        self._level = np.zeros((self._x, self._y), dtype=np.float64)
+        self._level = np.zeros((self._y, self._x), dtype=np.float64)
 
     def __getitem__(self, item):
         return self._level[item]
@@ -30,10 +30,10 @@ class ControlLayer(metaclass=ABCMeta):
 
 class FillsLayer(ControlLayer, ABC):
     def setFill(self, x, y, fill):
-        self._level[x, y] = fill
+        self._level[y, x] = fill
 
     def removeFill(self, x, y):
-        self._level[x, y] = self.ZERO
+        self._level[y, x] = self.ZERO
 
     def __call__(self,
                  WM: "np.ndarray",
@@ -46,10 +46,10 @@ class FillsLayer(ControlLayer, ABC):
 
 class DrainLayer(ControlLayer, ABC):
     def setDrain(self, x, y, drain):
-        self._level[x, y] = drain
+        self._level[y, x] = drain
 
     def removeDrain(self, x, y):
-        self._level[x, y] = self.ZERO
+        self._level[y, x] = self.ZERO
 
     def __call__(self,
                  WM: "np.ndarray",
@@ -62,15 +62,16 @@ class DrainLayer(ControlLayer, ABC):
 
 
 class Basin:
-    def __init__(self, x: int, y: int, eta: float = 0.5):
+    def __init__(self, x: int, y: int, eta: float = 0.5, maxElv: float = 10.0):
         self._x, self._y = x, y
         self._eta = eta
+        self._maxElv = maxElv
         self._layers: list["ControlLayer"] = []
 
-        self._BM = np.zeros((self._x, self._y), dtype=np.float64)
-        self._WM = np.zeros((self._x, self._y), dtype=np.float64)
-        self._SVX = np.zeros((2, self._x, self._y), dtype=np.float64)
-        self._SVY = np.zeros((2, self._x, self._y), dtype=np.float64)
+        self._BM = np.zeros((self._y, self._x), dtype=np.float64)
+        self._WM = np.zeros((self._y, self._x), dtype=np.float64)
+        self._SVX = np.zeros((2, self._y, self._x), dtype=np.float64)
+        self._SVY = np.zeros((2, self._y, self._x), dtype=np.float64)
 
         self._dB = np.zeros_like(self._BM)
         self._dW = np.zeros_like(self._WM)
@@ -80,20 +81,29 @@ class Basin:
     def __getitem__(self, item):
         return self._WM[item]
 
+    @property
+    def BM(self):
+        return self._BM
+
     def setElevation(self, x, y, elevation):
-        self._BM[x, y] = elevation
+        self._BM[y, x] = np.minimum(elevation, self._maxElv)
+
+    def addElevation(self, x, y, elevation):
+        self._BM[y, x] += elevation
+        self._BM[self._BM < 0] = 0
+        self._BM[self._BM > self._maxElv] = self._maxElv
 
     def setVelL(self, x, y, vel):
-        self._SVX[0, x, y] = vel
+        self._SVX[0, y, x] = vel
 
     def setVelR(self, x, y, vel):
-        self._SVX[1, x, y] = vel
+        self._SVX[1, y, x] = vel
 
     def setVelU(self, x, y, vel):
-        self._SVY[0, x, y] = vel
+        self._SVY[0, y, x] = vel
 
     def setVelD(self, x, y, vel):
-        self._SVY[1, x, y] = vel
+        self._SVY[1, y, x] = vel
 
     def addLayer(self, layer: ControlLayer):
         assert isinstance(layer, ControlLayer)
