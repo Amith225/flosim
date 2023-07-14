@@ -148,12 +148,10 @@ class DebugWindow(Qt.QWidget):
     def rainMode(self, px, py, k):
         px = max(min(px, self._map._W - 1), 0)
         py = max(min(py, self._map._H - 1), 0)
-        p = np.meshgrid([max(px - 1, 0), px, min(px + 1, self._map._W - 1)],
-                        [max(py - 1, 0), py, min(py + 1, self._map._H - 1)])
         if k > 0:
-            self.rain.setFill(*p, 0.001)
+            self.rain.setFill(py, px, 0.001)
         else:
-            self.rain.setFill(*p, py, 0)
+            self.rain.setFill(py, px, 0)
 
     def gutterMode(self, px, py, k):
         px = max(min(px, self._map._W - 1), 0)
@@ -161,9 +159,9 @@ class DebugWindow(Qt.QWidget):
         p = np.meshgrid([max(px - 1, 0), px, min(px + 1, self._map._W - 1)],
                         [max(py - 1, 0), py, min(py + 1, self._map._H - 1)])
         if k > 0:
-            self.gutter.setDrain(*p, 0.05)
+            self.gutter.setDrain(*p, 0.1)
         else:
-            self.gutter.setDrain(*p, py, 0)
+            self.gutter.setDrain(*p, 0)
 
     def buildingMode(self, px, py, k):
         px = max(min(px, self._map._W - 1), 0)
@@ -191,6 +189,7 @@ class DebugWindow(Qt.QWidget):
     def riverMode(self, px, py, k):
         px = max(min(px, self._map._W - 1), 0)
         py = max(min(py, self._map._H - 1), 0)
+        self.reservoir.setHeight(self.value.value())
         if k > 0:
             self.reservoir.setMask(px, py, True)
         else:
